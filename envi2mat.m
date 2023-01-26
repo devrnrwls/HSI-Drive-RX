@@ -4,7 +4,7 @@ function envi2mat(envifile,precision)
 % HSI-drive cubes
 % envifile = name of the file containing the cube ('nfECHV_processing.bil')
 % format = 'bil','bip' o 'bsq'
-% precision = 'double' or 'uint16'
+% precision = 'double', 'single' or 'uint16'
 
 % example envi2mat('nf3123_153_MF_TC_N_u16.bil','uint16');
 
@@ -28,7 +28,14 @@ if strcmp(precision,'uint16')
     cube_u16 = multibandread(envifile,[216 409 25],precision,0,format,'ieee-le');
     cube_u16 = permute(cube_u16,[3 1 2]);
     save(filename,'cube_u16');
-else
+elseif strcmp(precision,'single')
+    cube_fl32 = multibandread(envifile,[216 409 25],precision,0,format,'ieee-le');
+    cube_fl32 = permute(cube_fl32,[3 1 2]);
+    save(filename,'cube_fl32');
+elseif strcmp(precision,'double')
     cube = multibandread(envifile,[216 409 25],precision,0,format,'ieee-le');
-    save(filename,cube);
+    cube = permute(cube_u16,[3 1 2]);
+    save(filename,'cube');
+else
+    error('specified numeric format must be double, single or uint16');
 end

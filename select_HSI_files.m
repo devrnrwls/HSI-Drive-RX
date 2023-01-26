@@ -1,4 +1,4 @@
-function select_HSI_files(season, daytime, weather, scene)
+function select_HSI_files(season, weather, daytime, scene, precision)
 
 % This function selects a subset of the HSI-Drive dataset files according
 % to specified annotation fields and saves them to a new folder
@@ -7,7 +7,8 @@ function select_HSI_files(season, daytime, weather, scene)
 % WEATHER: 'sunny', 'cloudy', 'wet','foggy','all'
 % DAYTIME: 'dawn','midday','sunset','all'
 % SCENE: 'road', 'highway','urban','all'
-% Example: select_HSI_files('spring', 'all', 'all', 'road')
+% precision: 'float32', 'uint16'
+% Example: select_HSI_files('spring', 'all', 'all', 'road','uint16')
 
 % Author: Koldo Basterretxea
 % Digital Eletronics Design Group (GDED)
@@ -71,9 +72,15 @@ end
 %% Files to be copied
 filenames = strcat('**\nf',se,we,dt,sc,'_*');
 cd ..
-cd Image_dataset
-files= dir(filenames);
+folder = strcat('Image_dataset\cubes_',precision);
+folder_GTs = 'Image_dataset\labels';
+cd(folder)
+files = dir(filenames);
+cd ..
+cd labels
+GTs = dir(filenames);
 numberOfFiles = length(files);
+cd ..
 
 % Create folder for file subset
 foldername = strcat(season,'_',weather,'_',daytime,'_',scene);
@@ -91,9 +98,7 @@ if ~ isempty(files)
         end
         subfolderold = subfolder;
         copyfile(strcat(files(k).folder,'\',files(k).name),subfoldername)
+        copyfile(strcat(GTs(k).folder,'\',GTs(k).name),subfoldername)
     end
 end
 
-%% Back to Matlab function folder 
-cd ..
-cd Matlab_functions

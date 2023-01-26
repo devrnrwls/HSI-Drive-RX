@@ -2,16 +2,32 @@
 
 These functions help processing the data in the HSI-Drive dataset.
 
-- `GTdisplay.m`: This function displays the selected ground-truth image using HSI-Drive labeling color-code.
+- `denormalize.m`:
+  Denormalize the cubes that were generated with final band normaliztion and saves the denormalized cube in a new file.
+  Coeffiecient `.mat` files for denormalization of each image are in the "Coefficients" folder.
+
+- `envi2mat.m`:
+  Convert ENVI files to Matlab Level5 `.mat` matrices containing the hyperspetral information of an image.
+
+- `GTdisplay.m`:
+  Display the selected ground-truth image using HSI-Drive labeling color-code.
+
   - `HSIdrive_colormap.mat`
 
-- `raw2jpg.m`: This function converts original camera raw files into grayscale images and saves them using jpeg encoding.
+- `mat2envi.m`:
+  Convert the Matlab Level5 `.mat` matrices containing the hyperspetral information of an image to ENVI format binary files
+  (including the generation of ENVI headers).
 
-- `select_HSI_files.m`: This function generates subsets of the HIS-Drive image dataset according to the four parameters used in the dataset organization: Season, Weather, Daytime and Scene. The generated subset is saved to a new folder.
+  - `write_HSI_drive_hdr.m`:
+    Generate ENVI headers.
 
-- `mat2envi.m`: This function converts the Matlab Level5 .mat matrices containing the hyperspetral information of an image to ENVI format binary files (including the generation of ENVI headers).
-  - `write_HSI_drive_hdr.m`
+- `rawsequence2avi.m`:
+  Convert provided example raw image sequences into AVI videos for easy visualization.
 
-- `envi2mat.m`: This function converts ENVI files to Matlab Level5 .mat matrices containing the hyperspetral information of an image.
+  - `raw2jpg.m`:
+    Convert original camera raw files into grayscale images and saves them using jpeg encoding.
 
-- `rawsequence2avi.m`: This script converts provided example raw image sequences into AVI videos for easy visualization.
+- `select_HSI_files.m`:
+  Generate subsets of the HSI-Drive image dataset and their corresponding ground-truths, according to the four parameters
+  used in the dataset organization: Season, Weather, Daytime and Scene.
+  The generated subset is saved to a new folder.

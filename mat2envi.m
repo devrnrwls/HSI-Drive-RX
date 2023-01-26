@@ -4,7 +4,7 @@ function mat2envi(HSIcube, format, precision, sort_bands)
 % cubes to ENVI files
 % HSIcube = name of the file containing the cube
 % format = 'bil','bip' o 'bsq'
-% precision = 'double' or 'uint16'
+% precision = 'double', 'single' or 'uint16'
 % sort_bands = '1' (yes) or '0' (no)
 
 % example mat2envi('nf3123_153_MF_TC_N_u16.mat','bil','uint16',1)
@@ -19,15 +19,18 @@ function mat2envi(HSIcube, format, precision, sort_bands)
 
 %% load cube
 addpath ..\Image_dataset\cubes_uint16
+addpath ..\Image_dataset\cubes_float32
 addpath ..\Image_dataset\cubes
 load(HSIcube);
 
 if strcmp(precision,'uint16')
     data = permute(cube_u16 , [2 3 1]);
+elseif strcmp(precision,'single')
+	data = permute(cube_fl32 , [2 3 1]);
 elseif strcmp(precision,'double')
     data = permute(cube , [2 3 1]);
 else
-    error('Error. \input format must be uint16 or double')
+    error('Error. \input format must be uint16, single or double')
 end
 
 %% sort bands?
