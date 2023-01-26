@@ -1,4 +1,4 @@
-function write_HSI_drive_hdr(headername, format, precision, sorted)
+function write_HSI_drive_hdr(headername, format, precision, sorted, maxval)
 
 % Write ENVI header for HSI-Drive files
 
@@ -8,9 +8,11 @@ function write_HSI_drive_hdr(headername, format, precision, sorted)
 % 2021
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-bands = [888.48, 897.66, 879.13, 869.11, 956.11, 795.96, 807.63, 783.76,...
- 770.58, 679.14, 744.48, 757.92, 731.88, 718.30, 692.90, 928.81, 936.25,...
- 920.60, 912.17, 950.39, 848.55, 858.95, 838,08, 826.77, 944.49];
+bands = [888.48, 897.66, 879.13, 869.11, 956.11,...
+         795.96, 807.63, 783.76, 770.58, 679.14,...
+         744.48, 757.92, 731.88, 718.30, 692.90,...
+         928.81, 936.25, 920.60, 912.17, 950.39,...
+         848.55, 858.95, 564.36, 826.77, 944.49];
 
 if sorted
     [bands,ind]=sort(bands);
@@ -19,7 +21,7 @@ end
 if strcmp(precision,'uint16')
     datatype = '12';
 else
-    datatype = '5';
+    datatype = '4';
 end
 
 fid = fopen(headername,'wt');
@@ -44,7 +46,8 @@ fprintf(fid,'%s%s\n','data type = ',datatype);
 fprintf(fid,'byte order = 0\n');
 fprintf(fid,'x start = 0\n');
 fprintf(fid,'y start = 0\n');
-fprintf(fid,'max_value = 4095\n');
+%fprintf(fid,'max_value = 4095\n');
+fprintf(fid,'%s%d\n','max value = ', maxval);
 fprintf(fid,'Wavelength = {\n');
 fprintf(fid,'%.2f,\n',bands(1:24));
 fprintf(fid,'%.2f\n',bands(25));

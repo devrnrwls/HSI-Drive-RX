@@ -4,14 +4,16 @@ function envi2mat(envifile,precision)
 % HSI-drive cubes
 % envifile = name of the file containing the cube ('nfECHV_processing.bil')
 % format = 'bil','bip' o 'bsq'
-% precision = 'double', 'single' or 'uint16'
+% precision = 'single' or 'uint16'
 
-% example envi2mat('nf3123_153_MF_TC_N_u16.bil','uint16');
+% example envi2mat('nf3123_153_MF_TC.bil','single');
+% NOTE: In the HSI-Drive 2.0 dataset all cubes are codified using 32-bit
+% single precision. Use function single2u16 to generate a uint16 dataset.
 
 % Author: Koldo Basterretxea
 % Digital Eletronics Design Group (GDED)
 % University of the Basque Country (UPV/EHU)
-% 2021
+% 2022
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 dotposition = find(envifile == '.');
@@ -30,12 +32,7 @@ if strcmp(precision,'uint16')
     save(filename,'cube_u16');
 elseif strcmp(precision,'single')
     cube_fl32 = multibandread(envifile,[216 409 25],precision,0,format,'ieee-le');
-    cube_fl32 = permute(cube_fl32,[3 1 2]);
     save(filename,'cube_fl32');
-elseif strcmp(precision,'double')
-    cube = multibandread(envifile,[216 409 25],precision,0,format,'ieee-le');
-    cube = permute(cube_u16,[3 1 2]);
-    save(filename,'cube');
 else
-    error('specified numeric format must be double, single or uint16');
+    error('Precision must be single or uint16')
 end

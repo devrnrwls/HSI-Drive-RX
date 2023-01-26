@@ -1,7 +1,7 @@
 function GTdisplay(GT_file) 
 
 % This function displays labeled images/ground-truth images
-% Example: GTdisplay('nf3123_153.png')
+% Example: GTdisplay('nf3123_153_TC.png')
 %
 % Dependencies: HSIdrive_colormap.mat
 %

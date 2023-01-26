@@ -1,6 +1,6 @@
 function raw2jpg(filename, folder)
 
-% Converts a raw image into a jpeg compressed image and saves into folder
+% Converts a raw image into a jpeg compressed image and saves it in 'folder'
 % Example: raw2jpg('nf3123_153.bin', 'visible_raws')
 %
 % Author: Koldo Basterretxea

@@ -7,13 +7,16 @@ function select_HSI_files(season, weather, daytime, scene, precision)
 % WEATHER: 'sunny', 'cloudy', 'wet','foggy','all'
 % DAYTIME: 'dawn','midday','sunset','all'
 % SCENE: 'road', 'highway','urban','all'
-% precision: 'float32', 'uint16'
-% Example: select_HSI_files('spring', 'all', 'all', 'road','uint16')
+% precision: 'fl32' for single, 'u16' for uint16
+%% NOTE: In the HSI-Drive 2.0 dataset all cubes are codified using 32-bit
+% single precision. Use function single2u16 to generate a uint16 dataset.
+
+% Example: select_HSI_files('spring', 'all', 'all', 'road','float32')
 
 % Author: Koldo Basterretxea
 % Digital Eletronics Design Group (GDED)
 % University of the Basque Country (UPV/EHU)
-% 2021
+% 2022
 
 %% Use HSI-Drive file annotation code
 switch season
@@ -73,7 +76,7 @@ end
 filenames = strcat('**\nf',se,we,dt,sc,'_*');
 cd ..
 folder = strcat('Image_dataset\cubes_',precision);
-folder_GTs = 'Image_dataset\labels';
+%folder_GTs = 'Image_dataset\labels';
 cd(folder)
 files = dir(filenames);
 cd ..
@@ -89,7 +92,9 @@ mkdir(foldername)
 % Copy files to new folders
 subfolderold='none';
 if ~ isempty(files)
+    k2=0;
     for k=1:numberOfFiles
+        k2 = k2+1;
         separator=find(files(k).folder == '\');
         subfolder = files(k).folder(separator(length(separator)):length(files(k).folder));
         subfoldername=strcat(foldername,subfolder);
@@ -98,7 +103,11 @@ if ~ isempty(files)
         end
         subfolderold = subfolder;
         copyfile(strcat(files(k).folder,'\',files(k).name),subfoldername)
-        copyfile(strcat(GTs(k).folder,'\',GTs(k).name),subfoldername)
+        % One GT file for two cubes (with MF and with no MF)
+        if k == (numberOfFiles/2)+1
+            k2 = 1;
+        end
+        copyfile(strcat(GTs(k2).folder,'\',GTs(k2).name),subfoldername)
     end
 end
 
