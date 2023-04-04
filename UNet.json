@@ -1,0 +1,31 @@
+{
+    "name": "UNet",
+    "training_model_options": {
+    "patch_height": 128,
+    "patch_width": 128,
+    "input_channels": 25,
+    "encoder_depth": 2,
+    "initial_number_of_filters": 8,
+    "enc_conv_filter_size": 3
+    },
+    "test_model_options": {
+    "num_patches_per_image": 18,
+    "patch_height": 128,
+    "patch_height_stride_test": 57,
+    "patch_width": 128,
+    "patch_width_stride_test": 44,
+    "batch_size": 57
+    },
+    "training_compile_options": {
+    "initial_lr": 0.005,
+    "gradient_decay_factor": 0.9,
+    "squared_gradient_decay_factor": 0.999
+    },
+    "training_fit_options": {
+    "train_batch_size": 128,
+    "val_batch_size": 798,
+    "epochs": 60,
+    "verbose": 1,
+    "workers": 0
+    }
+    }
