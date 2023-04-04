@@ -15,7 +15,7 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, LearningR
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import unet_train_tf2 as unet_train
+import unet as unet
 import Dataset
 import Generator
 from metrics import CustomSparseCategoricalAccuracy, CustomSparseCategoricalPrecision, CustomSparseCategoricalIoU
@@ -42,7 +42,7 @@ def train_model(net_config, dataset_config, float_model, exp_number, implicit_no
     training_fit_options = net_config['training_fit_options']
     lrate = training_compile_options['initial_lr']
 
-    model = unet_train.UNET(training_model_options['patch_height'], training_model_options['patch_width'], training_model_options['input_channels'], dataset_config['num_clases_exp' + str(exp_number)] + 1, "channels_last", batchnorm=True, enc_conv_kernel_size=net_config["training_model_options"]["enc_conv_filter_size"], enc_depth=net_config["training_model_options"]["encoder_depth"], n_filters=net_config["training_model_options"]["initial_number_of_filters"], dropout=0.5, implicitNorm=implicit_norm, inference=False, dataAugmentation=data_augmentation)
+    model = unet.UNET(training_model_options['patch_height'], training_model_options['patch_width'], training_model_options['input_channels'], dataset_config['num_clases_exp' + str(exp_number)] + 1, "channels_last", batchnorm=True, enc_conv_kernel_size=net_config["training_model_options"]["enc_conv_filter_size"], enc_depth=net_config["training_model_options"]["encoder_depth"], n_filters=net_config["training_model_options"]["initial_number_of_filters"], dropout=0.5, implicitNorm=implicit_norm, inference=False, dataAugmentation=data_augmentation)
 
     gradient_decay_factor = training_compile_options['gradient_decay_factor']
     squared_gradient_decay_factor = training_compile_options['squared_gradient_decay_factor']
