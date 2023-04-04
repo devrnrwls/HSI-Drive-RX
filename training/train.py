@@ -35,7 +35,7 @@ def lr_time_based_decay(epoch, lr):
         actual_lr = lr
     return actual_lr
 
-def train_model(net_config, dataset_config, float_model, exp_number, implicit_norm=False, usePatches=False, data_augmentation=False, cubeGenConf="TC_PN"):
+def train_model(net_config, dataset_config, float_model, exp_number, implicit_norm=False, usePatches=False, data_augmentation=False):
 
     training_model_options = net_config['training_model_options']
     training_compile_options = net_config['training_compile_options']
@@ -59,8 +59,8 @@ def train_model(net_config, dataset_config, float_model, exp_number, implicit_no
     weights = np.array(dataset_config['weights' + str(exp_number)])
     train_batch_size = training_fit_options['train_batch_size']
     val_batch_size = training_fit_options['val_batch_size']
-    normMaxValue = dataset_config["maximo_global_" + cubeGenConf]
-    normMinValue = dataset_config["minimo_global_" + cubeGenConf]
+    normMaxValue = dataset_config["maximo_global"]
+    normMinValue = dataset_config["minimo_global"]
 
     train_dataset = Dataset.HSIDriveDataset(train_dir, data_folder, label_folder, weights, normMaxValue, normMinValue, usePatches=usePatches)
     val_dataset = Dataset.HSIDriveDataset(val_dir, data_folder, label_folder, weights, normMaxValue, normMinValue, usePatches=usePatches)
@@ -110,10 +110,9 @@ def main():
 
     # construct the argument parser and parse the arguments
     ap = argparse.ArgumentParser()
-    ap.add_argument('-fm', '--float_model',     type=str, default='../workspace/train/unet3clases/float_model_explicit_norm_452_tf2_train.h5')
+    ap.add_argument('-fm', '--float_model',     type=str, default='./model.h5')
     ap.add_argument('-ex', '--exp_number',      type=int, default=1)
     ap.add_argument('-i',  '--inplicit_norm',   action='store_true')
-    ap.add_argument('-cc', '--cube_conf',       type=str, default="MF_TC")
     args = ap.parse_args()
 
     try:
@@ -127,10 +126,19 @@ def main():
     try:
         src_path = os.path.dirname(os.path.abspath(__file__))
         dataset_config_path = os.path.join(src_path, '../Dataset.json')
-        with open(dataset_config_path, 'r') as f:
-            dataset_config = json.load(f)
+        with open(dataset_config_path, 'r') as g:
+            dataset_config = json.load(g)
+        g.close()
+        with open(dataset_config_path, 'w+') as f:
+            dataset_config["versionDASIP"]["weights"] = dataset_config["versionDASIP"]["weights" + str(args.exp_number)]
+            dataset_config["versionDASIP"]["global_weights"] = dataset_config["versionDASIP"]["global_weights" + str(args.exp_number)]
+            f.write(json.dumps(dataset_config, indent=0))
+        f.close()
+
+
     except:
         sys.exit('The dataset name is incorrect!')
+
 
     print('\n------------------------------------')
     print('TensorFlow version : ',tf.__version__)
@@ -142,7 +150,7 @@ def main():
     print(' --inplicit_norm      : ', args.inplicit_norm)
     print('------------------------------------\n')
 
-    train_model(net_config, dataset_config["versionDASIP"], args.float_model, args.exp_number, args.inplicit_norm, args.cube_conf)
+    train_model(net_config, dataset_config["versionDASIP"], args.float_model, args.exp_number, args.inplicit_norm)
 
 
 if __name__ ==  "__main__":

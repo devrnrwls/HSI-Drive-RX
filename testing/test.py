@@ -25,11 +25,11 @@ def findOccurrences(s, ch):
     return [i for i, letter in enumerate(s) if letter == ch]
 
 
-def test_model(net_config, dataset_config, pred_dir, float_model, exp_number, applyThresholdToPredictions, threshold, implicit_norm, usePatches=False, data_augmentation=False, cubeGenConf="TC_PN"):
+def test_model(net_config, dataset_config, pred_dir, float_model, exp_number, applyThresholdToPredictions, threshold, implicit_norm, usePatches=False, data_augmentation=False):
 
     K.set_learning_phase(0)
-    normMaxValue = dataset_config["maximo_global_" + cubeGenConf]
-    normMinValue = dataset_config["minimo_global_" + cubeGenConf]
+    normMaxValue = dataset_config["maximo_global"]
+    normMinValue = dataset_config["minimo_global"]
     training_model_options = net_config['training_model_options']
     test_model_options = net_config['test_model_options']
 
@@ -80,13 +80,12 @@ def main():
 
     # construct the argument parser and parse the arguments
     ap = argparse.ArgumentParser()
-    ap.add_argument('-fm', '--float_model',                     type=str, default='pretrained_models/float_model_3classes_TC_PN_2_3_8_explicit_norm_4.h5')
+    ap.add_argument('-fm', '--float_model',                     type=str, default='./model_name.h5')
     ap.add_argument('-pd', '--pred_dir',                        type=str, default='../dataset/Pred/')
     ap.add_argument('-ex', '--exp_number',                      type=int, default=1)
     ap.add_argument('-at', '--applyThresholdToPredictions',     action='store_true')
     ap.add_argument('-t',  '--threshold',                       type=float, default=0.8)
     ap.add_argument('-i',  '--implicit_norm',                   action='store_true')
-    ap.add_argument('-cc', '--cube_conf',                       type=str, default="MF_TC")
     args = ap.parse_args()
 
     try:
@@ -100,8 +99,14 @@ def main():
     try:
         src_path = os.path.dirname(os.path.abspath(__file__))
         dataset_config_path = os.path.join(src_path, '../Dataset.json')
-        with open(dataset_config_path, 'r') as f:
-            dataset_config = json.load(f)
+        with open(dataset_config_path, 'r') as g:
+            dataset_config = json.load(g)
+        g.close()
+        with open(dataset_config_path, 'w+') as f:
+            dataset_config["versionDASIP"]["weights"] = dataset_config["versionDASIP"]["weights" + str(args.exp_number)]
+            dataset_config["versionDASIP"]["global_weights"] = dataset_config["versionDASIP"]["global_weights" + str(args.exp_number)]
+            f.write(json.dumps(dataset_config, indent=0))
+        f.close()
     except:
         sys.exit('The dataset name is incorrect!')
 
@@ -118,7 +123,7 @@ def main():
     print(' --implicit_norm                 : ', args.implicit_norm)
     print('------------------------------------\n')
 
-    test_model(net_config, dataset_config["versionDASIP"], args.pred_dir, args.float_model, args.exp_number, args.applyThresholdToPredictions, args.threshold, args.implicit_norm, args.cube_conf)
+    test_model(net_config, dataset_config["versionDASIP"], args.pred_dir, args.float_model, args.exp_number, args.applyThresholdToPredictions, args.threshold, args.implicit_norm)
 
 if __name__ ==  "__main__":
     main()
