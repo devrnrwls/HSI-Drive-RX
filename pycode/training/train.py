@@ -71,9 +71,9 @@ def train_model(net_config, dataset_config, float_model, exp_number, implicit_no
     epochs = training_fit_options['epochs']
     verbose = training_fit_options['verbose'] #0 = silent, 1 = progress bar, 2 = one line per epoch.
     shuffle = True
-    workers = training_fit_options['workers'] #Mikel lo tiene puesto a 0
-    use_multiprocessing=False #Mikel lo tiene puesto como False
-    max_queue_size = 10 #Mikel lo tiene puesto como 10
+    workers = training_fit_options['workers']
+    use_multiprocessing=False
+    max_queue_size = 10
 
     cp_callback = ModelCheckpoint(filepath=float_model, monitor='val_weighted_cat_iou', save_best_only=True, save_weights_only=False, mode='max', save_freq='epoch', verbose=0)
     callbacks = [cp_callback] #Save the model periodically during fit using callbacks
@@ -83,8 +83,8 @@ def train_model(net_config, dataset_config, float_model, exp_number, implicit_no
     if enable_early_stopping:
         early_stopping_callback = EarlyStopping(
             monitor="val_loss",         # Stop training when `val_loss` is no longer improving
-            min_delta=5e-3,             # "no longer improving" being defined as "no better than 1e-2 less"
-            patience=80,    # "no longer improving" being further defined as "for at least 2 epochs"
+            min_delta=5e-3,             # "no longer improving" being defined as "no better than 5e-3 less"
+            patience=80,                # "no longer improving" being further defined as "for at least 80 epochs"
             mode = 'min',               # Stop when the quantity monitored has stopped decreasing
             verbose=1)
     callbacks.append(early_stopping_callback)
