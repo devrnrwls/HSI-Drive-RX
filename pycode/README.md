@@ -2,11 +2,9 @@
 
 ## Requirements
 
-The packages needed to run these scripts can be found in the 2.5 version of the Vitis AI containers provided by AMD-Xilinx.
-See [github.com/Xilinx/Vitis-AI/tree/2.5](https://github.com/Xilinx/Vitis-AI/tree/2.5).
+The packages needed to run these scripts can be found in the Vitis AI containers provided by AMD-Xilinx in [v3.5](https://github.com/Xilinx/Vitis-AI/tree/v3.5).
 
-There is a prebuilt [CPU](https://hub.docker.com/layers/xilinx/vitis-ai-cpu/2.5/images/sha256-eaa85efb06924995ebdb973546e7f69169b003b8cc525764bd9524ad554dddbe?context=explore) image,
-but a [GPU](https://github.com/Xilinx/Vitis-AI/tree/2.5#building-docker-from-recipe) one can also be built.
+There are some prebuilt [CPU docker images](https://hub.docker.com/layers/xilinx/vitis-ai-cpu/2.5/images/sha256-eaa85efb06924995ebdb973546e7f69169b003b8cc525764bd9524ad554dddbe?context=explore) for previous Vitis-AI versions which should be also compatible. All GPU images have to be built [from scratch](https://github.com/Xilinx/Vitis-AI/tree/v3.5/docker).
 
 Once you run the container, you have to choose `vitis-ai-tensorflow2` environment.
 
@@ -18,16 +16,13 @@ Alternatively, you can create your own Conda environment.
 # Your working directory
     ├── dataset
         ├── Train
-            ├── PatchesNpy
-            ├── LabelsExp1
+            ├── Cube_TC_PN_Npy
             ├── LabelsExp2
         ├── Val
-            ├── PatchesNpy
-            ├── LabelsExp1
+            ├── Cube_TC_PN_Npy
             ├── LabelsExp2
         ├── Test
-            ├── PatchesNpy
-            ├── LabelsExp1
+            ├── Cube_TC_PN_Npy
             ├── LabelsExp2
         ├── Pred
     ├── training
@@ -45,28 +40,25 @@ Alternatively, you can create your own Conda environment.
 
 ## Pretrained-models
 
-The pretrained models for the 3-class and 5-class experiments can be found under `/training/pretrained-models` directory.
+The pretrained models for the 5-class experiments can be found under `/training/pretrained-models/v2.0` directory.
 
 TC_PN: In the cube generation process apart from clipping and cropping the raw image and performing reflectance
 correction steps, traslation to center (TC) and pixel normalization (PN) have also been applied.
 
-2_3_8: This three values are related to the depth of the U-Net, the convolution kernel size and the number of filter of
+4_3_32: This three values are related to the depth of the U-Net, the convolution kernel size and the number of filter of
 the first convolution block.
 
 ## Dataset downloading
 
-The dataset (HSI-Drive v1.1) that has been used to train and test the pretrained models can be found in
-[HSI-Drive](https://ipaccess.ehu.eus/HSI-Drive/#download), as well as the recently uploaded v2.0.
-
-NOTE: The scripts that can be found in this repository expect the data to be in `.npy` format, while the downloaded
-cubes have a `.m` format.
+The dataset (HSI-Drive v2.0) that has been used to train and test the pretrained models can be found in
+[HSI-Drive](https://ipaccess.ehu.eus/HSI-Drive/#download).
 
 ## Testing
 
 When testing, apart from reporting the metrics, the resulting output images are saved in a folder specified by the user.
 
 ```
-python3 test.py -fm 'pretrained_models/float_model_3classes_TC_PN_2_3_8_explicit_norm_4.h5' -pd '../dataset/Pred/' -ex 1
+python3 test.py -fm 'pretrained_models/v2.0/float_model_5classes_TC_PN_4_3_32_explicit_norm_2.h5' -pd '../dataset/Pred/' -ex 2
 ```
 
 ## Training from scratch
@@ -79,16 +71,43 @@ python3 train.py -fm './model.h5' -ex 2
 
 ## Citing
 
-This pretrained models have been used in [Exploring Fully Convolutional Networks for the Segmentation of Hyperspectral Imaging Applied to Advanced Driver Assistance Systems](https://link.springer.com/book/10.1007/978-3-031-12748-9).
+This pretrained models have been used in [Rapid Deployment of Domain-specific Hyperspectral Image Processors with Application to Autonomous Driving](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=10382745).
 If you find this research useful, cite it as:
 
 ```
-@inproceedings{gutierrez2022exploring,
-  title={Exploring Fully Convolutional Networks for the Segmentation of Hyperspectral Imaging Applied to Advanced Driver Assistance Systems},
-  author={Guti{\'e}rrez-Zaballa, Jon and Basterretxea, Koldo and Echanobe, Javier and Mart{\'\i}nez, M Victoria and del Campo, In{\'e}s},
-  booktitle={Design and Architecture for Signal and Image Processing: 15th International Workshop, DASIP 2022, Budapest, Hungary, June 20--22, 2022, Proceedings},
-  pages={136--148},
-  year={2022},
-  organization={Springer}
-}
+@article{GUTIERREZZABALLA2023102878,
+title = {On-chip hyperspectral image segmentation with fully convolutional networks for scene understanding in autonomous driving},
+journal = {Journal of Systems Architecture},
+volume = {139},
+pages = {102878},
+year = {2023},
+issn = {1383-7621},
+doi = {https://doi.org/10.1016/j.sysarc.2023.102878},
+url = {https://www.sciencedirect.com/science/article/pii/S1383762123000577},
+author = {Jon Gutiérrez-Zaballa and Koldo Basterretxea and Javier Echanobe and M. Victoria Martínez and Unai Martinez-Corral and Óscar Mata-Carballeira and Inés {del Campo}},
+keywords = {Hyperspectral imaging, scene understanding, fully convolutional networks, autonomous driving systems, system on chip, benchmarks},
+abstract = {Most of current computer vision-based advanced driver assistance systems (ADAS) perform detection and tracking of objects quite successfully under regular conditions. However, under adverse weather and changing lighting conditions, and in complex situations with many overlapping objects, these systems are not completely reliable. The spectral reflectance of the different objects in a driving scene beyond the visible spectrum can offer additional information to increase the reliability of these systems, especially under challenging driving conditions. Furthermore, this information may be significant enough to develop vision systems that allow for a better understanding and interpretation of the whole driving scene. In this work we explore the use of snapshot, video-rate hyperspectral imaging (HSI) cameras in ADAS on the assumption that the near infrared (NIR) spectral reflectance of different materials can help to better segment the objects in real driving scenarios. To do this, we have used the HSI-Drive 1.1 dataset to perform various experiments on spectral classification algorithms. However, the information retrieval of hyperspectral recordings in natural outdoor scenarios is challenging, mainly because of deficient color constancy and other inherent shortcomings of current snapshot HSI technology, which poses some limitations to the development of pure spectral classifiers. In consequence, in this work we analyze to what extent the spatial features codified by standard, tiny fully convolutional network (FCN) models can improve the performance of HSI segmentation systems for ADAS applications. In order to be realistic from an engineering viewpoint, this research is focused on the development of a feasible HSI segmentation system for ADAS, which implies considering implementation constraints and latency specifications throughout the algorithmic development process. For this reason, it is of particular importance to include the study of the raw image preprocessing stage into the data processing pipeline. Accordingly, this paper describes the development and deployment of a complete machine learning-based HSI segmentation system for ADAS, including the characterization of its performance on different embedded computing platforms, including a single board computer, an embedded GPU SoC and a programmable system on chip (PSoC) with embedded FPGA. We verify the superiority of the FPGA-PSoC over the GPU-SoC in terms of energy consumption and, particularly, processing latency, and demonstrate that it is feasible to achieve segmentation speeds within the range of ADAS industry specifications using standard development tools.}}
+
+@INPROCEEDINGS{10382745,
+  author={Gutiérrez-Zaballa, Jon and Basterretxea, Koldo and Echanobe, Javier and Mata-Carballeira, Óscar and Martínez, M. Victoria},
+  booktitle={2023 30th IEEE International Conference on Electronics, Circuits and Systems (ICECS)},
+  title={Rapid Deployment of Domain-specific Hyperspectral Image Processors with Application to Autonomous Driving*},
+  year={2023},
+  volume={},
+  number={},
+  pages={1-6},
+  keywords={Road transportation;Quantization (signal);Costs;Program processors;Power demand;Image color analysis;Clouds;hyperspectral image processor;custom quantization;fully convolutional networks;autonomous driving},
+  doi={10.1109/ICECS58634.2023.10382745}}
+
+@INPROCEEDINGS{10371793,
+  author={Gutiérrez-Zaballa, Jon and Basterretxea, Koldo and Echanobe, Javier and Victoria Martínez, M. and Martinez-Corral, Unai},
+  booktitle={2023 IEEE Symposium Series on Computational Intelligence (SSCI)},
+  title={HSI-Drive v2.0: More Data for New Challenges in Scene Understanding for Autonomous Driving},
+  year={2023},
+  volume={},
+  number={},
+  pages={207-214},
+  keywords={Image segmentation;Technological innovation;Pedestrians;Computational modeling;Video sequences;Throughput;Robustness;hyperspectral imaging;dataset;scene understanding;autonomous driving systems;fully convolutional networks},
+  doi={10.1109/SSCI52147.2023.10371793}}
+
 ```
