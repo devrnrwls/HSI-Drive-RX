@@ -11,7 +11,7 @@ src_path = os.path.dirname(os.path.abspath(__file__))
 dataset_config_path = os.path.join(src_path, 'Dataset.json')
 with open(dataset_config_path, 'r') as f:
     data = json.load(f)
-    aux = data["versionDASIP"]
+    aux = data["version2.0"]
 f.close()
 
 #OJO, esto obliga a que, de manera externa, los pesos que se necesiten se coloquen en class_weight y global_weight

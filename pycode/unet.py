@@ -9,9 +9,7 @@ from tensorflow.keras.layers import *
 from tensorflow.keras import regularizers
 from tensorflow.keras import initializers
 from tensorflow.keras.backend import *
-from tensorflow import keras
 
-from distutils.log import error
 
 #Function to add 2 convolutional layers with the parameters passed to it
 def conv2d_block(input_tensor, n_filters, kernel_size = 3, batchnorm = True, data_format = "channels_first", concat_axis = 1):
@@ -31,12 +29,31 @@ def conv2d_block(input_tensor, n_filters, kernel_size = 3, batchnorm = True, dat
     x = Activation('relu')(x)
     return x
 
+def conv3d_block(input_tensor, n_filters, kernel_size = 3, batchnorm = True, data_format = "channels_first", concat_axis = 1):
+    #First layer
+    x = Conv3D(filters = n_filters, kernel_size = (kernel_size, kernel_size, kernel_size), data_format=data_format, padding = 'same',
+               kernel_initializer='glorot_uniform', bias_initializer='zeros',
+               kernel_regularizer = regularizers.l2(0.0001), bias_regularizer = regularizers.l2(0))(input_tensor)
+    if batchnorm:
+        x = BatchNormalization(epsilon = 0.00001, axis = concat_axis)(x)
+    x = Activation('relu')(x)
+    # Second layer
+    x = Conv3D(filters = n_filters, kernel_size = (kernel_size, kernel_size, kernel_size), data_format=data_format, padding = 'same',
+               kernel_initializer='glorot_uniform', bias_initializer='zeros',
+               kernel_regularizer = regularizers.l2(0.0001), bias_regularizer = regularizers.l2(0))(x)
+    if batchnorm:
+        x = BatchNormalization(epsilon = 0.00001, axis = concat_axis)(x)
+    x = Activation('relu')(x)
+    return x
+
 def data_augmentation(input_tensor, randomflipMode="horizontal", randomzoomHeightfactor=(-0.5), randomzoomWidthfactor=(-0.5), randomzoomInterpolationMode="bilinear"):
     x = RandomFlip(mode=randomflipMode)(input_tensor)
     #x = RandomZoom(height_factor = randomzoomHeightfactor, width_factor = randomzoomWidthfactor, interpolation = randomzoomInterpolationMode)(x)
     return x
 
 
+
+# like UNET_v2 but with a UpSampling2D replaced by Conv2D_transpose layer
 def UNET(inputDim1, inputDim2, inputDim3, nClasses, imageOrdering, batchnorm=True, enc_conv_kernel_size=3, enc_depth=2, n_filters=2*4, dropout=0.5, implicitNorm=False, inference=False, dataAugmentation=False):
 
     if imageOrdering == "channels_first":
@@ -65,7 +82,7 @@ def UNET(inputDim1, inputDim2, inputDim3, nClasses, imageOrdering, batchnorm=Tru
 
 
     if implicitNorm:
-        img_input = BatchNormalization(epsilon = 0, axis = concatAxis, gamma_initializer = initializers.Constant(2), moving_mean_initializer = "zeros", moving_variance_initializer = initializers.Constant(np.square([4.52, 4.52, 4.52, 4.52, 4.52, 4.52, 4.52, 4.52, 4.52, 4.52, 4.52, 4.52, 4.02, 4.52, 4.52, 4.52, 4.52, 4.52, 4.52, 4.52, 4.52, 4.52, 4.52, 4.52, 4.52])), beta_initializer = initializers.Constant(-1))(img_input)
+        img_input = BatchNormalization(epsilon = 0, axis = concatAxis, gamma_initializer = initializers.Constant(2), moving_mean_initializer = "zeros", moving_variance_initializer = initializers.Constant(np.square([0.1119, 0.1199, 0.1340, 0.1260, 0.0927, 0.1280, 0.1502, 0.1441, 0.1199, 0.0826, 0.1169, 0.1361, 0.1189, 0.1018, 0.0837, 0.1018, 0.1058, 0.1149, 0.1028, 0.0907, 0.1189, 0.1310, 0.1330, 0.1260, 0.0887])), beta_initializer = initializers.Constant(-1))(img_input)
 
     if dataAugmentation:
         img_input = data_augmentation(img_input)
@@ -192,47 +209,8 @@ def UNET(inputDim1, inputDim2, inputDim3, nClasses, imageOrdering, batchnorm=Tru
     c13 = Softmax(axis=concatAxis)(c12)
 
     if inference:
-        model = CustomModel(inputs=image_input, outputs=c12)
+        model = Model(inputs=image_input, outputs=c12)
     else:
-        model = CustomModel(inputs=image_input, outputs=c13)
+        model = Model(inputs=image_input, outputs=c13)
 
     return model
-
-
-class CustomModel(keras.Model):
-    def train_step(self, data):
-        # Unpack the data. Its structure depends on your model and
-        # on what you pass to `fit()`.
-        if len(data) == 3:
-            x, y, sample_weight = data
-        else:
-            sample_weight = None
-            x, y = data
-
-        with tf.GradientTape() as tape:
-            y_pred = self(x, training=True)  # Forward pass
-            # Compute the loss value.
-            # The loss function is configured in `compile()`.
-            loss = self.compiled_loss(
-                y,
-                y_pred,
-                sample_weight=sample_weight,
-                regularization_losses=self.losses,
-            )
-
-        # Compute gradients
-        trainable_vars = self.trainable_variables
-        gradients = tape.gradient(loss, trainable_vars)
-
-        # En caso de tener que hacer clipping de gradientes se puede hacer aquí siguiendo lo que se explica en https://neptune.ai/blog/understanding-gradient-clipping-and-how-it-can-fix-exploding-gradients-problem#:~:text=What%20is%20gradient%20clipping%3F,gradients%20to%20update%20the%20weights.
-
-        # Update weights
-        self.optimizer.apply_gradients(zip(gradients, trainable_vars))
-
-        # Update the metrics.
-        # Metrics are configured in `compile()`.
-        self.compiled_metrics.update_state(y, y_pred, sample_weight=sample_weight)
-
-        # Return a dict mapping metric names to current value.
-        # Note that it will include the loss (tracked in self.metrics).
-        return {m.name: m.result() for m in self.metrics}

@@ -1,7 +1,7 @@
 import numpy as np
-import os
 import tensorflow as tf
 import cv2
+import os
 
 class HSIDriveDataset():
     """
