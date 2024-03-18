@@ -103,8 +103,8 @@ def main():
             dataset_config = json.load(g)
         g.close()
         with open(dataset_config_path, 'w+') as f:
-            dataset_config["versionDASIP"]["weights"] = dataset_config["versionDASIP"]["weights" + str(args.exp_number)]
-            dataset_config["versionDASIP"]["global_weights"] = dataset_config["versionDASIP"]["global_weights" + str(args.exp_number)]
+            dataset_config["version2.0"]["weights"] = dataset_config["version2.0"]["weights" + str(args.exp_number)]
+            dataset_config["version2.0"]["global_weights"] = dataset_config["version2.0"]["global_weights" + str(args.exp_number)]
             f.write(json.dumps(dataset_config, indent=0))
         f.close()
     except:
@@ -123,7 +123,7 @@ def main():
     print(' --implicit_norm                 : ', args.implicit_norm)
     print('------------------------------------\n')
 
-    test_model(net_config, dataset_config["versionDASIP"], args.pred_dir, args.float_model, args.exp_number, args.applyThresholdToPredictions, args.threshold, args.implicit_norm)
+    test_model(net_config, dataset_config["version2.0"], args.pred_dir, args.float_model, args.exp_number, args.applyThresholdToPredictions, args.threshold, args.implicit_norm)
 
 if __name__ ==  "__main__":
     main()

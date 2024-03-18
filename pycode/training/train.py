@@ -130,8 +130,8 @@ def main():
             dataset_config = json.load(g)
         g.close()
         with open(dataset_config_path, 'w+') as f:
-            dataset_config["versionDASIP"]["weights"] = dataset_config["versionDASIP"]["weights" + str(args.exp_number)]
-            dataset_config["versionDASIP"]["global_weights"] = dataset_config["versionDASIP"]["global_weights" + str(args.exp_number)]
+            dataset_config["version2.0"]["weights"] = dataset_config["version2.0"]["weights" + str(args.exp_number)]
+            dataset_config["version2.0"]["global_weights"] = dataset_config["version2.0"]["global_weights" + str(args.exp_number)]
             f.write(json.dumps(dataset_config, indent=0))
         f.close()
 
@@ -150,7 +150,7 @@ def main():
     print(' --inplicit_norm      : ', args.inplicit_norm)
     print('------------------------------------\n')
 
-    train_model(net_config, dataset_config["versionDASIP"], args.float_model, args.exp_number, args.inplicit_norm)
+    train_model(net_config, dataset_config["version2.0"], args.float_model, args.exp_number, args.inplicit_norm)
 
 
 if __name__ ==  "__main__":
