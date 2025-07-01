@@ -1,4 +1,4 @@
-function mat2envi(HSIcube, format, precision, sort_bands) 
+function mat2envi(HSIcube, format, precision, sort_bands, version) 
 
 % This function converts Matlab Level 5 .mat files containing HSI-Drive
 % cubes to ENVI files
@@ -6,6 +6,7 @@ function mat2envi(HSIcube, format, precision, sort_bands)
 % format = 'bil','bip' o 'bsq'
 % precision = 'single' or 'uint16'
 % sort_bands = '1' (yes) or '0' (no)
+% version = 'v20' or 'v21scale' or 'v21noscale'
 
 % example mat2envi('nf3123_153_TC.mat','bil','uint16',1)
 % NOTE: In the HSI-Drive 2.0 dataset all cubes are codified using 32-bit
@@ -16,12 +17,19 @@ function mat2envi(HSIcube, format, precision, sort_bands)
 % Author: Koldo Basterretxea
 % Digital Eletronics Design Group (GDED)
 % University of the Basque Country (UPV/EHU)
-% 2022
+% 2025
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% load cube
-addpath ..\Image_dataset\cubes_fl32
-addpath ..\Image_dataset\cubes_fl32\MF
+if strcmp(version,'v20')
+    addpath ..\Image_dataset\cubes_fl32
+    addpath ..\Image_dataset\cubes_fl32\MF
+elseif strcmp(version,'v21scale')
+    addpath ..\Image_dataset\cubes_fl32\Cubes_Scaling
+elseif strcmp(version,'v21noscale')
+    addpath ..\Image_dataset\cubes_fl32\Cubes_NoScaling
+    addpath ..\Image_dataset\cubes_fl32\Cubes_NoScaling\MF
+end
 load(HSIcube);
 
 if strcmp(precision,'uint16')

@@ -1,6 +1,7 @@
 function [cubenorm, Ncoef] = perbandnorm(cubefile,minval,maxval)
 
 % This function performs per-band normalization of HSI cubes
+% Not recomended for versions 2.1 and avobe
 % cubefile: name of the .mat file containing 3D cube data
 % minval: minimum value for band normalization
 % maxval: maximum value for band normalization
@@ -11,7 +12,7 @@ function [cubenorm, Ncoef] = perbandnorm(cubefile,minval,maxval)
 % Author: Koldo Basterretxea
 % Digital Eletronics Design Group (GDED)
 % University of the Basque Country (UPV/EHU)
-% 2022
+% 2025
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % cd ..

@@ -1,7 +1,10 @@
-% This scripts converts the raw frame sequences in the example 'Video'
+% This scripts converts the raw frame sequences in the example 'Videos'
 % folder into a video .avi from .jpg images
 
-addpath Video;
+% Author: Koldo Basterertxea
+% 2022
+
+addpath Videos;
 fps = 11;
 
 %% List raw images

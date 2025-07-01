@@ -1,4 +1,4 @@
-function select_HSI_files(season, weather, daytime, scene, precision)
+function select_HSI_files(season, weather, daytime, scene, precision, version)
 
 % This function selects a subset of the HSI-Drive dataset files according
 % to specified annotation fields and saves them to a new folder
@@ -8,15 +8,17 @@ function select_HSI_files(season, weather, daytime, scene, precision)
 % DAYTIME: 'dawn','midday','sunset','all'
 % SCENE: 'road', 'highway','urban','all'
 % precision: 'fl32' for single, 'u16' for uint16
+% Version: 'v20', 'v21scale','v21noscale'
+
 %% NOTE: In the HSI-Drive 2.0 dataset all cubes are codified using 32-bit
 % single precision. Use function single2u16 to generate a uint16 dataset.
 
-% Example: select_HSI_files('spring', 'all', 'all', 'road','float32')
+% Example: select_HSI_files('spring', 'all', 'all', 'road','float32','v21scale')
 
 % Author: Koldo Basterretxea
 % Digital Eletronics Design Group (GDED)
 % University of the Basque Country (UPV/EHU)
-% 2022
+% 2025
 
 %% Use HSI-Drive file annotation code
 switch season
@@ -75,7 +77,14 @@ end
 %% Files to be copied
 filenames = strcat('**\nf',se,we,dt,sc,'_*');
 cd ..
-folder = strcat('Image_dataset\cubes_',precision);
+if strcmp(version,'v20')
+    folder = strcat('Image_dataset\cubes_',precision);
+elseif strcmp(version,'v21scale')
+    folder = strcat('Image_dataset\cubes_',precision,'\Cubes_Scaling');
+elseif strcmp(version,'v21noscale')
+    folder = strcat('Image_dataset\cubes_',precision,'\Cubes_NoScaling');
+end
+
 %folder_GTs = 'Image_dataset\labels';
 cd(folder)
 files = dir(filenames);

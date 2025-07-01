@@ -6,16 +6,35 @@
 % Author: Koldo Basterretxea
 % Digital Eletronics Design Group (GDED)
 % University of the Basque Country (UPV/EHU)
-% 2022
+% 2025
 
+% Select version 'v20', 'v21scale', 'v21noscale'
+version = 'v20';
+
+% Median filtering?
 MF = 0;
-if MF
-    npath = '..\Image_dataset\cubes_fl32\MF';
-    path = 'Image_dataset\cubes_fl32\MF';
-else
-   npath = '..\Image_dataset\cubes_fl32';
-   path = 'Image_dataset\cubes_fl32';
+
+if strcmp(version,'v20')
+    if MF
+       npath = '..\Image_dataset\cubes_fl32\MF';
+       path = 'Image_dataset\cubes_fl32\MF';
+    else
+      npath = '..\Image_dataset\cubes_fl32';
+      path = 'Image_dataset\cubes_fl32';
+    end
+elseif strcmp(version,'v21noscale')
+    if MF
+       npath = '..\Image_dataset\cubes_fl32\Cubes_NoScaling\MF';
+       path = 'Image_dataset\cubes_fl32\Cubes_NoScaling\MF';
+    else
+      npath = '..\Image_dataset\cubes_fl32\Cubes_NoScaling';
+      path = 'Image_dataset\cubes_fl32v\Cubes_NoScaling';
+    end
+elseif strcmp(version,'v21noscale')
+    npath = '..\Image_dataset\cubes_fl32\Cubes_Scaling';
+    path = 'Image_dataset\cubes_fl32v\Cubes_Scaling';
 end
+
 addpath(npath)
 
 cd ..
