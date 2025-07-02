@@ -1,6 +1,6 @@
-# HSI-Drive v2.0 Matlab functions
+# HSI-Drive v2 Matlab functions
 
-These functions help processing the data in the HSI-Drive v2.0 dataset.
+These functions help processing the data in the HSI-Drive v2 dataset.
 
 - `envi2mat.m`:
   Convert ENVI files to Matlab Level5 `.mat` matrices containing the hyperspetral information of an image.
