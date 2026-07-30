@@ -19,7 +19,7 @@ from tkinter import messagebox, ttk
 import numpy as np
 from PIL import Image, ImageTk
 
-from domain_1_aligned_rx import CoralTransform, RXModel, ROAD_LABEL, cube_to_hwc, load_label, load_manifest
+from domain_1_aligned_rx import CoralTransform, RXModel, ROAD_LABEL, cube_to_hwc, load_label, load_manifest, parse_domain_factor
 
 
 def completed_rows(results_path: Path) -> dict[str, list[dict[str, str]]]:
@@ -36,11 +36,12 @@ def load_group_model(group_dir: Path) -> tuple[dict[str, CoralTransform], RXMode
     rx_data = np.load(group_dir / "rx_background.npz")
     transforms: dict[str, CoralTransform] = {}
     for key in alignment.files:
-        if key.startswith("mean_weather_"):
-            weather = key.removeprefix("mean_weather_")
+        if key.startswith("mean_domain_") or key.startswith("mean_weather_"):
+            weather = key.removeprefix("mean_domain_").removeprefix("mean_weather_")
+            prefix = "domain" if f"whitening_domain_{weather}" in alignment else "weather"
             transforms[weather] = CoralTransform(
                 mean=alignment[key],
-                whitening=alignment[f"whitening_weather_{weather}"],
+                whitening=alignment[f"whitening_{prefix}_{weather}"],
                 recoloring=alignment["recoloring"],
                 target_mean=alignment["target_mean"],
             )
@@ -76,13 +77,12 @@ def score_colormap(scores: np.ndarray, road: np.ndarray) -> np.ndarray:
 
 
 class NormalRoadRXViewer:
-    def __init__(self, root: tk.Tk, dataset_dir: Path, results_dir: Path):
+    def __init__(self, root: tk.Tk, dataset_dir: Path, results_root: Path, domain_factor: str):
         self.root = root
         self.dataset_dir = dataset_dir
-        self.results_dir = results_dir
-        self.rows_by_group = completed_rows(results_dir / "results.csv")
-        if not self.rows_by_group:
-            raise ValueError("No completed normal-Road results found. Run domain_aligned_rx.py first.")
+        self.results_root = results_root
+        self.results_dir = results_root / domain_factor
+        self.domain_factor = domain_factor
         samples, _ = load_manifest(dataset_dir)
         self.samples = {sample.base: sample for sample in samples}
         self.samples_by_group: dict[str, list[object]] = defaultdict(list)
@@ -101,21 +101,24 @@ class NormalRoadRXViewer:
         self.root.geometry("1300x820")
         self.root.minsize(1050, 680)
         self._build_ui()
-        first_group = sorted(self.rows_by_group)[0]
-        self.group_var.set(first_group)
-        self._load_group()
+        self._switch_factor()
 
     def _build_ui(self) -> None:
         self.root.columnconfigure(1, weight=1)
         self.root.rowconfigure(0, weight=1)
         left = ttk.Frame(self.root, padding=10)
         left.grid(row=0, column=0, sticky="ns")
+        ttk.Label(left, text="Domain factor").grid(row=0, column=1, sticky="w")
+        self.factor_var = tk.StringVar(value=self.domain_factor)
+        factor_box = ttk.Combobox(left, textvariable=self.factor_var, values=("season", "weather", "daytime", "roadtype"), state="readonly", width=12)
+        factor_box.grid(row=1, column=1, sticky="ew", pady=(3, 10))
+        factor_box.bind("<<ComboboxSelected>>", lambda _event: self._switch_factor())
 
         ttk.Label(left, text="Controlled group").grid(row=0, column=0, sticky="w")
         self.group_var = tk.StringVar()
-        group_box = ttk.Combobox(left, textvariable=self.group_var, values=sorted(self.rows_by_group), state="readonly", width=24)
-        group_box.grid(row=1, column=0, sticky="ew", pady=(3, 10))
-        group_box.bind("<<ComboboxSelected>>", lambda _event: self._load_group())
+        self.group_box = ttk.Combobox(left, textvariable=self.group_var, values=(), state="readonly", width=24)
+        self.group_box.grid(row=1, column=0, sticky="ew", pady=(3, 10))
+        self.group_box.bind("<<ComboboxSelected>>", lambda _event: self._load_group())
 
         ttk.Label(left, text="Held-out normal nf samples").grid(row=2, column=0, sticky="w")
         self.sample_list = tk.Listbox(left, width=34, height=24, exportselection=False)
@@ -178,14 +181,28 @@ class NormalRoadRXViewer:
             # and tested weather domains are precisely the original train set.
             test_rows = self.rows_by_group[group]
             test_bases = {row["sample"] for row in test_rows}
-            tested_weather = {row["weather"] for row in test_rows}
+            tested_weather = {row.get("domain", row.get("weather", "")) for row in test_rows}
             train_rows = [
-                {"sample": sample.base, "condition": sample.condition, "weather": sample.weather}
+                {"sample": sample.base, "condition": sample.condition, "domain": sample.domain_value(self.domain_factor)}
                 for sample in self.samples_by_group[group]
-                if sample.weather in tested_weather and sample.base not in test_bases
+                if sample.domain_value(self.domain_factor) in tested_weather and sample.base not in test_bases
             ]
             self.group_split = {"train": train_rows, "test": test_rows}
         self._refresh_sample_list()
+
+    def _switch_factor(self) -> None:
+        self.domain_factor = self.factor_var.get()
+        self.root.title(f"Domain-Aligned RX Viewer | Factor: {self.domain_factor}")
+        self.results_dir = self.results_root / self.domain_factor
+        self.rows_by_group = completed_rows(self.results_dir / "results.csv")
+        if not self.rows_by_group:
+            self.group_var.set("")
+            self.sample_list.delete(0, tk.END)
+            self.info_var.set(f"No completed {self.domain_factor} results found.")
+            return
+        self.group_box.configure(values=sorted(self.rows_by_group))
+        self.group_var.set(sorted(self.rows_by_group)[0])
+        self._load_group()
 
     def _refresh_sample_list(self) -> None:
         self.current_items = []
@@ -196,7 +213,8 @@ class NormalRoadRXViewer:
         self.current_items.sort(key=lambda row: (row["split"], row["sample"]))
         self.sample_list.delete(0, tk.END)
         for row in self.current_items:
-            self.sample_list.insert(tk.END, f"[{row['split'].upper()}] {row['sample']}  | weather {row['weather']}")
+            domain = row.get("domain", row.get("weather", ""))
+            self.sample_list.insert(tk.END, f"[{row['split'].upper()}] {row['sample']}  | {self.domain_factor} {domain}")
         if self.current_items:
             self.sample_list.selection_set(0)
             self._load_sample()
@@ -218,7 +236,7 @@ class NormalRoadRXViewer:
         self.road = label == ROAD_LABEL
         features = hsi[self.road]
         self.scores = np.full(label.shape, np.nan, dtype=np.float64)
-        self.scores[self.road] = self.model.score(self.transforms[sample.weather].apply(features))
+        self.scores[self.road] = self.model.score(self.transforms[sample.domain_value(self.domain_factor)].apply(features))
         rgb_path = self.dataset_dir / "RGB" / f"{sample.base.removesuffix('_RC_TC')}_pseudocolor.png"
         if rgb_path.is_file():
             with Image.open(rgb_path) as image:
@@ -270,15 +288,17 @@ class NormalRoadRXViewer:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-dir", type=Path, default=Path("HSI_Drive"))
-    parser.add_argument("--results-dir", type=Path, default=Path("domain_aligned_rx_results"))
+    parser.add_argument("--results-dir", type=Path, default=None)
+    parser.add_argument("--domain-factor", type=parse_domain_factor, default="weather", metavar="FACTOR")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    results_root = Path("domain_1_aligned_rx_results") if args.results_dir is None else args.results_dir.parent
     root = tk.Tk()
     try:
-        NormalRoadRXViewer(root, args.dataset_dir, args.results_dir)
+        NormalRoadRXViewer(root, args.dataset_dir, results_root, args.domain_factor)
     except Exception as exc:
         root.destroy()
         raise

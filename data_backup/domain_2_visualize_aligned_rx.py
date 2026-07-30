@@ -41,12 +41,13 @@ def load_transforms(path: Path) -> dict[str, CoralTransform]:
     target_mean = saved["target_mean"]
     transforms: dict[str, CoralTransform] = {}
     for key in saved.files:
-        if not key.startswith("mean_weather_"):
+        if not (key.startswith("mean_domain_") or key.startswith("mean_weather_")):
             continue
-        weather = key.removeprefix("mean_weather_")
-        transforms[weather] = CoralTransform(
+        domain = key.removeprefix("mean_domain_").removeprefix("mean_weather_")
+        prefix = "domain" if f"whitening_domain_{domain}" in saved else "weather"
+        transforms[domain] = CoralTransform(
             mean=saved[key],
-            whitening=saved[f"whitening_weather_{weather}"],
+            whitening=saved[f"whitening_{prefix}_{domain}"],
             recoloring=recoloring,
             target_mean=target_mean,
         )
@@ -196,6 +197,7 @@ def visualize_group(
     output_dir: Path,
     max_pixels: int,
     seed: int,
+    factor: str,
 ) -> None:
     group_dir = output_dir / f"group_{group}"
     transforms = load_transforms(group_dir / "coral_alignment.npz")
@@ -213,7 +215,7 @@ def visualize_group(
         sample = samples_by_base.get(row["sample"])
         if sample is None:
             raise FileNotFoundError(f"Could not find original nf sample {row['sample']}")
-        weather = row["weather"]
+        weather = row.get("domain", row.get("weather", ""))
         features, _ = road_features(sample)
         features = capped_rows(features, max_pixels, rng)
         before[weather].append(features)
@@ -223,7 +225,7 @@ def visualize_group(
             score_path = Path.cwd() / score_path
         score_map = np.load(score_path)
         scores[weather].append(score_map[np.isfinite(score_map)])
-        plot_score_map(score_path, maps_dir / f"{row['sample']}_score_map.png", f"{row['sample']} | Weather {weather}")
+        plot_score_map(score_path, maps_dir / f"{row['sample']}_score_map.png", f"{row['sample']} | {factor} {weather}")
 
     before_joined = {weather: np.concatenate(values) for weather, values in before.items()}
     after_joined = {weather: np.concatenate(values) for weather, values in after.items()}
@@ -252,7 +254,8 @@ def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-dir", type=Path, default=Path("HSI_Drive"))
-    parser.add_argument("--results-dir", type=Path, default=Path("domain_aligned_rx_results"))
+    parser.add_argument("--results-dir", type=Path, default=None)
+    parser.add_argument("--domain-factor", choices=("season", "weather", "daytime", "roadtype"), default="weather")
     parser.add_argument("--groups", nargs="*", help="Optional controlled group IDs, e.g. 113 111.")
     parser.add_argument("--max-pixels-per-weather", type=int, default=5_000)
     parser.add_argument("--seed", type=int, default=42)
@@ -261,6 +264,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    if args.results_dir is None:
+        args.results_dir = Path("domain_aligned_rx_results") if args.domain_factor == "weather" else Path(f"domain_{args.domain_factor}_aligned_rx_results")
     results_path = args.results_dir / "results.csv"
     if not results_path.is_file():
         raise FileNotFoundError(f"Run domain_aligned_rx.py first; missing {results_path}")
@@ -276,7 +281,7 @@ def main() -> None:
         raise ValueError("No completed groups found in results.csv for the requested selection.")
     for group, rows in sorted(by_group.items()):
         print(f"Visualizing group {group}: {len(rows)} held-out normal images")
-        visualize_group(group, rows, samples_by_base, args.results_dir, args.max_pixels_per_weather, args.seed)
+        visualize_group(group, rows, samples_by_base, args.results_dir, args.max_pixels_per_weather, args.seed, args.domain_factor)
 
 
 if __name__ == "__main__":

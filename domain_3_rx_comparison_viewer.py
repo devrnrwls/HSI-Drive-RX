@@ -13,7 +13,7 @@ from tkinter import messagebox, ttk
 import numpy as np
 from PIL import Image, ImageTk
 
-from domain_1_aligned_rx import ROAD_LABEL, RXModel, cube_to_hwc, load_label, load_manifest
+from domain_1_aligned_rx import ROAD_LABEL, RXModel, cube_to_hwc, load_label, load_manifest, parse_domain_factor
 
 
 def read_integrated_rows(path: Path) -> dict[str, list[dict[str, str]]]:
@@ -25,12 +25,13 @@ def read_integrated_rows(path: Path) -> dict[str, list[dict[str, str]]]:
     return dict(grouped)
 
 
-def single_weather_models(results_dir: Path) -> dict[str, list[str]]:
+def single_weather_models(results_dir: Path, factor: str) -> dict[str, list[str]]:
     models: dict[str, list[str]] = {}
+    prefix = "single_weather" if factor == "weather" else f"single_{factor}"
     for group_dir in results_dir.glob("group_*"):
         weather = sorted(
-            path.name.removeprefix("single_weather_").removesuffix("_rx_background.npz")
-            for path in group_dir.glob("single_weather_*_rx_background.npz")
+            path.name.removeprefix(f"{prefix}_").removesuffix("_rx_background.npz")
+            for path in group_dir.glob(f"{prefix}_*_rx_background.npz")
         )
         if weather:
             models[group_dir.name.removeprefix("group_")] = weather
@@ -68,11 +69,12 @@ def false_alarm_overlay(rgb: np.ndarray, road: np.ndarray, scores: np.ndarray, t
 
 
 class RXComparisonViewer:
-    def __init__(self, root: tk.Tk, dataset_dir: Path, integrated_dir: Path, single_dir: Path):
+    def __init__(self, root: tk.Tk, dataset_dir: Path, integrated_dir: Path, single_dir: Path, domain_factor: str):
         self.root, self.dataset_dir = root, dataset_dir
         self.integrated_dir, self.single_dir = integrated_dir, single_dir
         integrated = read_integrated_rows(integrated_dir / "results.csv")
-        single = single_weather_models(single_dir)
+        self.domain_factor = domain_factor
+        single = single_weather_models(single_dir, domain_factor)
         self.rows_by_group = {group: rows for group, rows in integrated.items() if group in single}
         self.models_by_group = {group: single[group] for group in self.rows_by_group}
         if not self.rows_by_group:
@@ -127,7 +129,7 @@ class RXComparisonViewer:
         self.current_rows = sorted(self.rows_by_group[group], key=lambda row: (row["weather"], row["sample"]))
         self.sample_list.delete(0, tk.END)
         for row in self.current_rows:
-            self.sample_list.insert(tk.END, f"{row['sample']}  | test weather {row['weather']}")
+            self.sample_list.insert(tk.END, f"{row['sample']}  | test {self.domain_factor} {row.get('domain', row.get('weather', ''))}")
         if self.current_rows:
             self.sample_list.selection_set(0)
             self._load_selected_sample()
@@ -160,14 +162,15 @@ class RXComparisonViewer:
             ("Integrated CORAL RX (train: all weather)", integrated_scores, float(integrated_data["train_score_p99"]))
         ]
         for weather in self.models_by_group[row["group"]]:
-            saved = np.load(self.single_dir / f"group_{row['group']}" / f"single_weather_{weather}_rx_background.npz")
+            prefix = "single_weather" if self.domain_factor == "weather" else f"single_{self.domain_factor}"
+            saved = np.load(self.single_dir / f"group_{row['group']}" / f"{prefix}_{weather}_rx_background.npz")
             model = RXModel(saved["mean"], saved["inv_cov"])
             scores = np.full(label.shape, np.nan, dtype=np.float64)
             scores[road] = model.score(hsi[road])
             comparisons.append((f"Single-weather RX (train: weather {weather})", scores, float(saved["train_score_p99"])))
         self._show(self.rgb_label, rgb, (300, 210))
         self.info_var.set(
-            f"Test weather: {row['weather']}\n"
+            f"Test {self.domain_factor}: {row.get('domain', row.get('weather', ''))}\n"
             f"Showing integrated RX plus {len(comparisons) - 1} single-weather models.\n"
             "All score maps share one 1st–99th percentile color range; red overlays use each model's train p99."
         )
@@ -205,16 +208,21 @@ class RXComparisonViewer:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-dir", type=Path, default=Path("HSI_Drive"))
-    parser.add_argument("--integrated-results-dir", type=Path, default=Path("domain_aligned_rx_results"))
-    parser.add_argument("--single-weather-results-dir", type=Path, default=Path("single_weather_rx_comparison_results"))
+    parser.add_argument("--integrated-results-dir", type=Path, default=None)
+    parser.add_argument("--single-weather-results-dir", type=Path, default=None)
+    parser.add_argument("--domain-factor", type=parse_domain_factor, default="weather", metavar="FACTOR")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    if args.integrated_results_dir is None:
+        args.integrated_results_dir = Path("domain_aligned_rx_results") if args.domain_factor == "weather" else Path(f"domain_{args.domain_factor}_aligned_rx_results")
+    if args.single_weather_results_dir is None:
+        args.single_weather_results_dir = Path("single_weather_rx_comparison_results") if args.domain_factor == "weather" else Path(f"single_{args.domain_factor}_rx_comparison_results")
     root = tk.Tk()
     try:
-        RXComparisonViewer(root, args.dataset_dir, args.integrated_results_dir, args.single_weather_results_dir)
+        RXComparisonViewer(root, args.dataset_dir, args.integrated_results_dir, args.single_weather_results_dir, args.domain_factor)
     except Exception:
         root.destroy()
         raise
