@@ -265,7 +265,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     if args.results_dir is None:
-        args.results_dir = Path("domain_aligned_rx_results") if args.domain_factor == "weather" else Path(f"domain_{args.domain_factor}_aligned_rx_results")
+        args.results_dir = Path(f"domain_{args.domain_factor}_aligned_rx_results")
     results_path = args.results_dir / "results.csv"
     if not results_path.is_file():
         raise FileNotFoundError(f"Run domain_aligned_rx.py first; missing {results_path}")
